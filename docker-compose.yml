@@ -1,0 +1,71 @@
+services:
+  spark-master:
+    build: .
+    container_name: spark-master
+    ports:
+      - "8080:8080"  # Web UI
+      - "7077:7077"  # Master port
+    volumes:
+      - ./app:/app  # Mount app directory
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]
+
+  spark-worker-1:
+    build: .
+    container_name: spark-worker-1
+    depends_on:
+      - spark-master
+    volumes:
+      - ./app:/app
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"]
+    deploy:
+      resources:
+        limits:
+          cpus: '8'
+          memory: 11g
+
+  spark-worker-2:
+    build: .
+    container_name: spark-worker-2
+    depends_on:
+      - spark-master
+    volumes:
+      - ./app:/app
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"]
+    deploy:
+      resources:
+        limits:
+          cpus: '8'
+          memory: 11g
+
+  spark-worker-3:
+    build: .
+    container_name: spark-worker-3
+    depends_on:
+      - spark-master
+    volumes:
+      - ./app:/app
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"]
+    deploy:
+      resources:
+        limits:
+          cpus: '8'
+          memory: 11g
+
+  app:
+    build: .
+    container_name: spark-app
+    depends_on:
+      - spark-master
+      - spark-worker-1
+      - spark-worker-2
+      - spark-worker-3
+    volumes:
+      - ./app:/app
+    command: [
+        "spark-submit",
+        "--master", "spark://spark-master:7077",
+        "--driver-memory", "4g",
+        "--executor-memory", "10g",
+        "--executor-cores", "8",
+        "/app/main.py"
+    ]
