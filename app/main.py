@@ -1,26 +1,35 @@
 from pyspark.sql import SparkSession
+import argparse
+import os
+
+from data_loader import load_trip_data, load_fare_data, validate_dataframes
+
 
 def main():
-    # Initialize a SparkSession
-    spark = SparkSession.builder \
-        .appName("MySimpleSparkApp") \
-        .getOrCreate()
+    parser = argparse.ArgumentParser(description="NYC Taxi Data Loader")
+    parser.add_argument(
+        "--test",
+        action="store_true",
+        help="Load only one file from each category for testing",
+    )
+    parser.add_argument(
+        "--data-root",
+        default=os.environ.get("DATA_ROOT", "/data/nyc"),
+        help="Path to dataset root mounted in container",
+    )
+    args = parser.parse_args()
 
+    spark = SparkSession.builder.appName("NYCTaxiDataLoad").getOrCreate()
     print("SparkSession created successfully!")
 
-    # Create a simple DataFrame
-    data = [("Alice", 1),
-            ("Bob", 2),
-            ("Charlie", 3)]
-    columns = ["name", "id"]
-    df = spark.createDataFrame(data, columns)
+    trip_df = load_trip_data(spark, data_root=args.data_root, test=args.test)
+    fare_df = load_fare_data(spark, data_root=args.data_root, test=args.test)
 
-    # Show the DataFrame in the logs
-    df.show()
+    validate_dataframes(trip_df, fare_df)
 
-    # Stop the SparkSession
     spark.stop()
     print("Spark job finished successfully.")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
