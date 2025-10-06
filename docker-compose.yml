@@ -3,11 +3,13 @@ services:
     build: .
     container_name: spark-master
     ports:
-      - "8080:8080"  # Web UI
-      - "7077:7077"  # Master port
+      - "8080:8080" # Web UI
+      - "7077:7077" # Master port
     volumes:
-      - ./app:/app  # Mount app directory
-    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]
+      - ./app:/app
+      - ../nyc-taxi-data:/data/nyc:ro
+    command:
+      ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]
 
   spark-worker-1:
     build: .
@@ -16,11 +18,17 @@ services:
       - spark-master
     volumes:
       - ./app:/app
-    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"]
+      - ../nyc-taxi-data:/data/nyc:ro
+    command:
+      [
+        "/opt/spark/bin/spark-class",
+        "org.apache.spark.deploy.worker.Worker",
+        "spark://spark-master:7077",
+      ]
     deploy:
       resources:
         limits:
-          cpus: '8'
+          cpus: "8"
           memory: 11g
 
   spark-worker-2:
@@ -30,11 +38,17 @@ services:
       - spark-master
     volumes:
       - ./app:/app
-    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"]
+      - ../nyc-taxi-data:/data/nyc:ro
+    command:
+      [
+        "/opt/spark/bin/spark-class",
+        "org.apache.spark.deploy.worker.Worker",
+        "spark://spark-master:7077",
+      ]
     deploy:
       resources:
         limits:
-          cpus: '8'
+          cpus: "8"
           memory: 11g
 
   spark-worker-3:
@@ -44,11 +58,17 @@ services:
       - spark-master
     volumes:
       - ./app:/app
-    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"]
+      - ../nyc-taxi-data:/data/nyc:ro
+    command:
+      [
+        "/opt/spark/bin/spark-class",
+        "org.apache.spark.deploy.worker.Worker",
+        "spark://spark-master:7077",
+      ]
     deploy:
       resources:
         limits:
-          cpus: '8'
+          cpus: "8"
           memory: 11g
 
   app:
@@ -61,11 +81,18 @@ services:
       - spark-worker-3
     volumes:
       - ./app:/app
-    command: [
+      - ../nyc-taxi-data:/data/nyc:ro
+    command:
+      [
         "spark-submit",
-        "--master", "spark://spark-master:7077",
-        "--driver-memory", "4g",
-        "--executor-memory", "10g",
-        "--executor-cores", "8",
-        "/app/main.py"
-    ]
+        "--master",
+        "spark://spark-master:7077",
+        "--driver-memory",
+        "4g",
+        "--executor-memory",
+        "10g",
+        "--executor-cores",
+        "8",
+        "/app/main.py",
+        "--test",
+      ]
