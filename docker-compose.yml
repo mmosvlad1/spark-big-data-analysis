@@ -8,6 +8,9 @@ services:
     volumes:
       - ./app:/app
       - ../nyc-taxi-data:/data/nyc:ro
+      # - ../nyc-taxi-test:/data/nyc:ro
+      - ../nyc-taxi-data-processed:/data/processed
+      - ../nyc-taxi-data-quarantine:/data/quarantine
     command:
       ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]
 
@@ -19,6 +22,9 @@ services:
     volumes:
       - ./app:/app
       - ../nyc-taxi-data:/data/nyc:ro
+      # - ../nyc-taxi-test:/data/nyc:ro
+      - ../nyc-taxi-data-processed:/data/processed
+      - ../nyc-taxi-data-quarantine:/data/quarantine
     command:
       [
         "/opt/spark/bin/spark-class",
@@ -28,8 +34,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "8"
-          memory: 11g
+          cpus: "6"
+          memory: 16g
 
   spark-worker-2:
     build: .
@@ -39,6 +45,9 @@ services:
     volumes:
       - ./app:/app
       - ../nyc-taxi-data:/data/nyc:ro
+      # - ../nyc-taxi-test:/data/nyc:ro
+      - ../nyc-taxi-data-processed:/data/processed
+      - ../nyc-taxi-data-quarantine:/data/quarantine
     command:
       [
         "/opt/spark/bin/spark-class",
@@ -48,40 +57,24 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "8"
-          memory: 11g
-
-  spark-worker-3:
-    build: .
-    container_name: spark-worker-3
-    depends_on:
-      - spark-master
-    volumes:
-      - ./app:/app
-      - ../nyc-taxi-data:/data/nyc:ro
-    command:
-      [
-        "/opt/spark/bin/spark-class",
-        "org.apache.spark.deploy.worker.Worker",
-        "spark://spark-master:7077",
-      ]
-    deploy:
-      resources:
-        limits:
-          cpus: "8"
-          memory: 11g
+          cpus: "6"
+          memory: 16g
 
   app:
     build: .
     container_name: spark-app
+    ports:
+      - "4040:4040"
     depends_on:
       - spark-master
       - spark-worker-1
       - spark-worker-2
-      - spark-worker-3
     volumes:
       - ./app:/app
       - ../nyc-taxi-data:/data/nyc:ro
+      # - ../nyc-taxi-test:/data/nyc:ro
+      - ../nyc-taxi-data-processed:/data/processed
+      - ../nyc-taxi-data-quarantine:/data/quarantine
     command:
       [
         "spark-submit",
@@ -89,10 +82,14 @@ services:
         "spark://spark-master:7077",
         "--driver-memory",
         "4g",
+        "--conf",
+        "spark.executor.instances=2",
         "--executor-memory",
-        "10g",
+        "12g",
+        "--conf",
+        "spark.executor.memoryOverhead=2g",
         "--executor-cores",
-        "8",
+        "6",
         "/app/main.py",
-        "--test",
       ]
+
