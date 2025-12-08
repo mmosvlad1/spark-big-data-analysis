@@ -35,7 +35,7 @@ services:
       resources:
         limits:
           cpus: "6"
-          memory: 16g
+          memory: 12g
 
   spark-worker-2:
     build: .
@@ -58,7 +58,7 @@ services:
       resources:
         limits:
           cpus: "6"
-          memory: 16g
+          memory: 12g
 
   app:
     build: .
@@ -85,11 +85,10 @@ services:
         "--conf",
         "spark.executor.instances=2",
         "--executor-memory",
-        "12g",
+        "6g",
         "--conf",
-        "spark.executor.memoryOverhead=2g",
+        "spark.executor.memoryOverhead=1g",
         "--executor-cores",
         "6",
         "/app/main.py",
       ]
-

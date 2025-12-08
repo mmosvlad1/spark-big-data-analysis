@@ -12,6 +12,8 @@ RUN apk add --no-cache \
     openjdk11-jre \
     python3 \
     py3-pip \
+    py3-numpy \
+    py3-pandas \
     bash \
     curl \
     procps \
