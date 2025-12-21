@@ -1,0 +1,94 @@
+services:
+  spark-master:
+    build: .
+    container_name: spark-master
+    ports:
+      - "8080:8080" # Web UI
+      - "7077:7077" # Master port
+    volumes:
+      - ./app:/app
+      - ../nyc-taxi-data:/data/nyc:ro
+      # - ../nyc-taxi-test:/data/nyc:ro
+      - ../nyc-taxi-data-processed:/data/processed
+      - ../nyc-taxi-data-quarantine:/data/quarantine
+    command:
+      ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]
+
+  spark-worker-1:
+    build: .
+    container_name: spark-worker-1
+    depends_on:
+      - spark-master
+    volumes:
+      - ./app:/app
+      - ../nyc-taxi-data:/data/nyc:ro
+      # - ../nyc-taxi-test:/data/nyc:ro
+      - ../nyc-taxi-data-processed:/data/processed
+      - ../nyc-taxi-data-quarantine:/data/quarantine
+    command:
+      [
+        "/opt/spark/bin/spark-class",
+        "org.apache.spark.deploy.worker.Worker",
+        "spark://spark-master:7077",
+      ]
+    deploy:
+      resources:
+        limits:
+          cpus: "6"
+          memory: 12g
+
+  spark-worker-2:
+    build: .
+    container_name: spark-worker-2
+    depends_on:
+      - spark-master
+    volumes:
+      - ./app:/app
+      - ../nyc-taxi-data:/data/nyc:ro
+      # - ../nyc-taxi-test:/data/nyc:ro
+      - ../nyc-taxi-data-processed:/data/processed
+      - ../nyc-taxi-data-quarantine:/data/quarantine
+    command:
+      [
+        "/opt/spark/bin/spark-class",
+        "org.apache.spark.deploy.worker.Worker",
+        "spark://spark-master:7077",
+      ]
+    deploy:
+      resources:
+        limits:
+          cpus: "6"
+          memory: 12g
+
+  app:
+    build: .
+    container_name: spark-app
+    ports:
+      - "4040:4040"
+    depends_on:
+      - spark-master
+      - spark-worker-1
+      - spark-worker-2
+    volumes:
+      - ./app:/app
+      - ../nyc-taxi-data:/data/nyc:ro
+      # - ../nyc-taxi-test:/data/nyc:ro
+      - ../nyc-taxi-data-processed:/data/processed
+      - ../nyc-taxi-data-quarantine:/data/quarantine
+    command:
+      [
+        "spark-submit",
+        "--master",
+        "spark://spark-master:7077",
+        "--driver-memory",
+        "4g",
+        "--conf",
+        "spark.executor.instances=2",
+        "--executor-memory",
+        "6g",
+        "--conf",
+        "spark.executor.memoryOverhead=1g",
+        "--executor-cores",
+        "6",
+        "/app/main.py",
+      ]
